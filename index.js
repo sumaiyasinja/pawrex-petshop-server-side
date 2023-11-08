@@ -29,7 +29,9 @@ async function run() {
     await client.connect();
 
     const serviceCollection = client.db("pawrexDB").collection("service");
-
+    const bookingCollection = client.db("pawrexDB").collection("bookings");
+    
+    // services
     app.get('/services', async(req, res) =>{
         const cursor = serviceCollection.find();
         const result = await cursor.toArray();
@@ -50,32 +52,84 @@ async function run() {
         const result =await serviceCollection.findOne( query );
         res.send(result)
     })
- app.put('/services/:id', async(req, res) =>{
-    const id = req.params.id;
-    const service = req.body;
-    const filter = { _id: new ObjectId(id) };
-    const options = { upsert: true };
-    const updatedService = {
-      $set: {
-        service_name :service.service_name ,
-        service_description: service.service_description, 
-        service_image :service.service_image ,
-        service_price : service.service_price ,
-        times_taken :service.times_taken ,
-        service_area :service.service_area ,
-        // service_provider:service.service_provider
-      },
-    };
-    const result = await serviceCollection.updateOne(
-      filter,
-      updatedService,
-      options
-    );
-    res.send(result);
- })
+    app.put('/services/:id', async(req, res) =>{
+        const id = req.params.id;
+        const service = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const options = { upsert: true };
+        const updatedService = {
+          $set: {
+            service_name :service.service_name ,
+            service_description: service.service_description, 
+            service_image :service.service_image ,
+            service_price : service.service_price ,
+            times_taken :service.times_taken ,
+            service_area :service.service_area ,
+            // service_provider:service.service_provider
+          },
+        };
+        const result = await serviceCollection.updateOne(
+          filter,
+          updatedService,
+          options
+        );
+        res.send(result);
+    })
+
+    // book service
+    app.post('/bookings', async(req, res) =>{
+        const booking = req.body;
+        const result = await bookingCollection.insertOne(booking);
+        res.send(result)
+    })
+    // app.get('/bookings', async(req, res) =>{
+    //     // let query = {}
+    //     // if(req.query?.email){
+    //     //     query = {
+    //     //         email: req.query.email
+    //     //     }
+    //     // }
+    //     // const cursor = bookingCollection.find(query);
+    //     const result = await bookingCollection.find().toArray();
+    //     res.send(result)
+    // })
+    // app.get('/bookings', async(req, res) =>{
+    //     let query = {}
+    //     if(req.query?.email){
+    //         query = {
+    //             email: req.query.email
+    //         }
+    //     }
+    //     // const cursor = bookingCollection.find(query);
+    //     const result = await bookingCollection.find(query).toArray();
+    //     res.send(result)
+    // })
+
+   app.get('/bookings', async (req, res) => {
+  const userEmail = req.query.email; 
+
+  const query = {
+    BookedBy: userEmail,
+  };
+
+  try {
+    const bookings = await bookingCollection.find(query).toArray();
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
-
+  
+    app.delete('/bookings/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await bookingCollection.deleteOne(query);
+      res.send(result);
+  })
+    
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
