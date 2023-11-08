@@ -82,28 +82,6 @@ async function run() {
         const result = await bookingCollection.insertOne(booking);
         res.send(result)
     })
-    // app.get('/bookings', async(req, res) =>{
-    //     // let query = {}
-    //     // if(req.query?.email){
-    //     //     query = {
-    //     //         email: req.query.email
-    //     //     }
-    //     // }
-    //     // const cursor = bookingCollection.find(query);
-    //     const result = await bookingCollection.find().toArray();
-    //     res.send(result)
-    // })
-    // app.get('/bookings', async(req, res) =>{
-    //     let query = {}
-    //     if(req.query?.email){
-    //         query = {
-    //             email: req.query.email
-    //         }
-    //     }
-    //     // const cursor = bookingCollection.find(query);
-    //     const result = await bookingCollection.find(query).toArray();
-    //     res.send(result)
-    // })
 
    app.get('/bookings', async (req, res) => {
   const userEmail = req.query.email; 
@@ -119,9 +97,23 @@ async function run() {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
-});
+    });
 
+    app.put('/bookings', async (req, res) => {
+      // const id = req.params.id;
+      const updatedBooking = req.body;
+      // const filter = { _id: new ObjectId(id) };
+      const filter = req.query.email; 
 
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          status: updatedBooking.status
+        },
+      };
+      const result = await bookingCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
+    })
   
     app.delete('/bookings/:id', async (req, res) => {
       const id = req.params.id;
@@ -134,7 +126,6 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
