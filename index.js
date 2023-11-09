@@ -1,6 +1,6 @@
 const express = require('express')
-// const jwt = require('jsonwebtoken');
-// const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
@@ -8,8 +8,17 @@ const app = express()
 const port = process.env.PORT || 5000
 
 // middleware
-app.use(cors())
+app.use(cors({
+  origin: [
+      // 'http://localhost:5173',
+      https://assignment11-70459.web.app/,
+      https://assignment11-70459.firebaseapp.com/
+     
+  ],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 console.log(process.env.DB_USER);
 
@@ -25,21 +34,23 @@ const client = new MongoClient(uri, {
   }
 });
 
-// const verificationToken = (req, res, next) => {
-//   const token = req?.cookies?.token;
-//   // console.log('token in the middleware', token);
-//   // no token available 
-//   if (!token) {
-//       return res.status(401).send({ message: 'unauthorized access' })
-//   }
-//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-//       if (err) {
-//           return res.status(401).send({ message: 'unauthorized access' })
-//       }
-//       req.user = decoded;
-//       next();
-//   })
-// }
+
+const tokenVerify = async(req, res, next) =>{
+  const token = req?.cookies?.token;
+  // console.log('token in the middleware', token);
+  // no token available 
+  if(!token){
+      return res.status(401).send({message: 'unauthorized access'})
+  }
+
+  jwt.verify(token, process.env.SECRET, (err, decoded) =>{
+      if(err){
+          return res.status(401).send({message: 'unauthorized access'})
+      }
+      req.user = decoded;
+      next();
+  })
+}
 async function run() {
   try {
     await client.connect();
@@ -47,21 +58,26 @@ async function run() {
     const serviceCollection = client.db("pawrexDB").collection("service");
     const bookingCollection = client.db("pawrexDB").collection("bookings");
 
-  //   app.post('/jwt', async (req, res) => {
-  //     const user = req.body;
+    app.post('/jwt', async(req, res) => {
+      const body = req.body
+      red.send(body)
+     const token = jwt.sign(body, process.env.SECRET, { expiresIn: '1h' });
+     res.cookie("token", token, 
+     {
+      httpOnly: true,
+      secure: false,
+      // send()
+      // expires: 1hr
+     }
+     ) .send({ success: true });
 
-  //     console.log('user for token', user);
+      console.log('Received POST request:', req.body);
+    
+      // Send a response (modify this based on your needs)
+      res.status(200).json({ message: 'POST request received successfully' });
+    });
 
-  //     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-
-  //     res.cookie('token', token, {
-  //         httpOnly: true,
-  //         secure: true,
-  //         sameSite: 'none'
-  //     })
-  //         .send({ success: true });
-  // })
-
+ 
     // services
     app.get('/services', async(req, res) =>{
         const cursor = serviceCollection.find();
@@ -136,21 +152,34 @@ async function run() {
         res.send(result)
     })
     // get your booking
-        app.get('/bookings', async (req, res) => {
+        app.get('/bookings',tokenVerify, async (req, res) => {
         const userEmail = req.query.email; 
-
+        if(req.user.email !== req.query.email){
+          return res.status(403).send({message: 'forbidden access'})
+      }
+      let query = {};
+      if (req.query?.email) {
         const query = {
-          BookedBy: userEmail,
-        };
-
-        try {
-          const bookings = await bookingCollection.find(query).toArray();
+            BookedBy: userEmail,
+            
+          };
+      }
+      const bookings = await bookingCollection.find(query).toArray();
           res.json(bookings);
-        } catch (error) {
-          console.error(error);
-          res.status(500).json({ message: 'Internal server error' });
-        }
-          });
+        })
+        // const query = {
+        //   BookedBy: userEmail,
+          
+        // };
+
+        // try {
+        //   const bookings = await bookingCollection.find(query).toArray();
+        //   res.json(bookings);
+        // } catch (error) {
+        //   console.error(error);
+        //   res.status(500).json({ message: 'Internal server error' });
+        // }
+          // });
     // get your provided service email
    app.get('/myservices', async (req, res) => {
       const userEmail = req.query.email; 
