@@ -83,6 +83,13 @@ async function run() {
         const result =await serviceCollection.findOne( query );
         res.send(result)
     })
+    app.delete('/services/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await serviceCollection.deleteOne(query);
+      res.send(result);
+    })
+
     app.put('/services/:_id', async(req, res) =>{
       const _id = req.params._id;
       const service = req.body;
