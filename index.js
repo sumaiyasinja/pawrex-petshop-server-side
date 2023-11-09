@@ -99,14 +99,14 @@ async function run() {
         const result =await serviceCollection.findOne( query );
         res.send(result)
     })
-    app.delete('/services/:id', async (req, res) => {
+    app.delete('/services/:id', tokenVerify,async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await serviceCollection.deleteOne(query);
       res.send(result);
     })
 
-    app.put('/services/:_id', async(req, res) =>{
+    app.put('/services/:_id',tokenVerify, async(req, res) =>{
       const _id = req.params._id;
       const service = req.body;
       const filter = { _id: new ObjectId(_id) };
@@ -202,7 +202,7 @@ async function run() {
           // })
         
         // user booking
-        app.delete('/bookings/:id', async (req, res) => {
+        app.delete('/bookings/:id', tokenVerify, async (req, res) => {
           const id = req.params.id;
           const query = { _id: new ObjectId(id) }
           const result = await bookingCollection.deleteOne(query);
