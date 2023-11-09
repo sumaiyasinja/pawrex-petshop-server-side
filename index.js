@@ -209,7 +209,7 @@ async function run() {
           res.send(result);
         })
         // update booking
-        app.put('/bookings/:id', async(req, res) =>{
+        app.put('/bookings/:id',tokenVerify, async(req, res) =>{
         const id = req.params.id;
         const booking = req.body;
         const filter = { _id: new ObjectId(id) };
